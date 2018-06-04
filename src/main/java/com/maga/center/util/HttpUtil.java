@@ -31,6 +31,9 @@ public class HttpUtil {
         return doGet(url, 3000, 20000, charset);
     }
 
+    public static String doGet(String url, Map<String, String> header) {
+        return doGet(url, 3000, 20000, null, header);
+    }
 
     public static String doGet(String url, int readTimeout) {
         return doGet(url, 3000, readTimeout);
@@ -46,6 +49,10 @@ public class HttpUtil {
     }
 
     public static String doGet(String url, int connTimeout, int readTimeout, String charset) {
+        return doGet(url, connTimeout, readTimeout, charset, null);
+    }
+
+    public static String doGet(String url, int connTimeout, int readTimeout, String charset, Map<String, String> headers) {
         HttpClient client = new HttpClient();
         client.getHttpConnectionManager().getParams().setConnectionTimeout(connTimeout);
         client.getHttpConnectionManager().getParams().setSoTimeout(readTimeout);
@@ -54,6 +61,11 @@ public class HttpUtil {
         GetMethod method = null;
         try {
             method = new GetMethod(url);
+            if (headers != null) {
+                for (Map.Entry<String, String> entry : headers.entrySet()) {
+                    method.setRequestHeader(entry.getKey(), entry.getValue());
+                }
+            }
             method.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler(3, false));
             method.getParams().setParameter(HttpMethodParams.HTTP_CONTENT_CHARSET, "UTF-8");
             // Execute the method.
@@ -86,13 +98,12 @@ public class HttpUtil {
     }
 
     public static String doPost(String url, Map<String, String> params) {
-        return doPost(url, params, "", 20000);
+        return doPost(url, params, null, 20000);
     }
 
     public static String doPost(String url, Map<String, String> params, String charset) {
         return doPost(url, params, charset, 20000);
     }
-
 
     public static String doPost(String url, Map<String, String> params, String charset, int readTimeout) {
         HttpClient httpClient = new HttpClient();
@@ -126,21 +137,22 @@ public class HttpUtil {
         }
     }
 
-    public static String doPost(String url, String jsonString) {
+    public static String doPost(String url, String jsonString, Map<String, String> headers) {
         HttpClient httpClient = new HttpClient();
         PostMethod post = new PostMethod(url);
 
         try {
-
+            if (headers != null){
+                for (Map.Entry<String, String> entry : headers.entrySet()) {
+                    post.setRequestHeader(entry.getKey(), entry.getValue());
+                }
+            }
             StringRequestEntity entity = new StringRequestEntity(jsonString, "application/json", "UTF-8");
-
             post.setRequestEntity(entity);
-
             httpClient.executeMethod(post);
             // 获取二进制的byte流
             byte[] b = post.getResponseBody();
             String str = new String(b, "UTF-8");
-
             return str;
         } catch (Exception e) {
             logger.error("", e);
@@ -150,13 +162,14 @@ public class HttpUtil {
             post.releaseConnection();
         }
     }
+
     public static String doPost(String url, String string, String type) {
         HttpClient httpClient = new HttpClient();
         PostMethod post = new PostMethod(url);
 
         try {
 
-            StringRequestEntity entity = new StringRequestEntity(string, "application/"+type, "UTF-8");
+            StringRequestEntity entity = new StringRequestEntity(string, "application/" + type, "UTF-8");
 
             post.setRequestEntity(entity);
 
