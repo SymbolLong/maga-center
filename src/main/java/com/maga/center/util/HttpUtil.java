@@ -1,19 +1,14 @@
 package com.maga.center.util;
 
-import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.NameValuePair;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.StringRequestEntity;
+import com.maga.center.entity.ApiResult;
+import net.sf.json.JSONObject;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,187 +17,153 @@ public class HttpUtil {
 
     private static Logger logger = LoggerFactory.getLogger(HttpUtil.class);
 
+    private static String DEFAULT_CHARSET = "UTF-8";
 
-    public static String doGet(String url) {
+
+    public static ApiResult doGet(String url) {
         return doGet(url, 20000);
     }
 
-    public static String doGet(String url, String charset) {
+    public static ApiResult doGet(String url, String charset) {
         return doGet(url, 3000, 20000, charset);
     }
 
-    public static String doGet(String url, Map<String, String> header) {
+    public static ApiResult doGet(String url, Map<String, String> header) {
         return doGet(url, 3000, 20000, null, header);
     }
 
-    public static String doGet(String url, int readTimeout) {
+    public static ApiResult doGet(String url, int readTimeout) {
         return doGet(url, 3000, readTimeout);
     }
 
-
-    public static String doGet(String url, int connTimeout, int readTimeout) {
+    public static ApiResult doGet(String url, int connTimeout, int readTimeout) {
         return doGet(url, connTimeout, readTimeout, null);
     }
 
-    public static String doGetByUTF8(String url, int connTimeout, int readTimeout) {
-        return doGet(url, connTimeout, readTimeout, "UTF-8");
-    }
-
-    public static String doGet(String url, int connTimeout, int readTimeout, String charset) {
+    public static ApiResult doGet(String url, int connTimeout, int readTimeout, String charset) {
         return doGet(url, connTimeout, readTimeout, charset, null);
     }
 
-    public static String doGet(String url, int connTimeout, int readTimeout, String charset, Map<String, String> headers) {
+    public static ApiResult doGet(String url, int connTimeout, int readTimeout, String charset, Map<String, String> headers) {
         HttpClient client = new HttpClient();
         client.getHttpConnectionManager().getParams().setConnectionTimeout(connTimeout);
         client.getHttpConnectionManager().getParams().setSoTimeout(readTimeout);
-        String res = null;
         // Create a method instance.
-        GetMethod method = null;
-        try {
-            method = new GetMethod(url);
-            if (headers != null) {
-                for (Map.Entry<String, String> entry : headers.entrySet()) {
-                    method.setRequestHeader(entry.getKey(), entry.getValue());
-                }
-            }
-            method.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler(3, false));
-            method.getParams().setParameter(HttpMethodParams.HTTP_CONTENT_CHARSET, "UTF-8");
-            // Execute the method.
-            int statusCode = client.executeMethod(method);
-            if (statusCode == HttpStatus.SC_OK) {
-                BufferedReader reader;
-                if (charset == null) {
-                    reader = new BufferedReader(new InputStreamReader(method.getResponseBodyAsStream()));
-                } else {
-                    reader = new BufferedReader(new InputStreamReader(method.getResponseBodyAsStream(), charset));
-                }
-                StringBuffer stringBuffer = new StringBuffer();
-                String str = "";
-                while ((str = reader.readLine()) != null) {
-                    stringBuffer.append(str);
-                }
-                res = stringBuffer.toString();
-            } else {
-                logger.info("Response Code: " + statusCode);
-            }
-        } catch (Exception e) {
-            logger.error("url=" + url + "\r\n", e);
-        } finally {
-            if (method != null) {
-                method.releaseConnection();
+        GetMethod get = new GetMethod(url);
+        if (headers != null) {
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                get.setRequestHeader(entry.getKey(), entry.getValue());
             }
         }
-
-        return res;
+        get.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler(3, false));
+        get.getParams().setParameter(HttpMethodParams.HTTP_CONTENT_CHARSET, DEFAULT_CHARSET);
+        return getApiResult(url, client, get);
     }
 
-    public static String doPost(String url, Map<String, String> params) {
+    //----POST-----
+
+    public static ApiResult doPost(String url) {
+        return doPost(url, null);
+    }
+
+    public static ApiResult doPost(String url, Map<String, String> params) {
         return doPost(url, params, null, 20000);
     }
 
-    public static String doPost(String url, Map<String, String> params, String charset) {
+    public static ApiResult doPost(String url, Map<String, String> params, String charset) {
         return doPost(url, params, charset, 20000);
     }
 
-    public static String doPost(String url, Map<String, String> params, String charset, int readTimeout) {
+    public static ApiResult doPost(String url, Map<String, String> params, String charset, int readTimeout) {
         HttpClient httpClient = new HttpClient();
         httpClient.getHttpConnectionManager().getParams().setConnectionTimeout(2000);
         httpClient.getHttpConnectionManager().getParams().setSoTimeout(readTimeout);
         PostMethod post = new PostMethod(url);
-        List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-        for (Map.Entry<String, String> key : params.entrySet()) {
-            NameValuePair e = new NameValuePair(key.getKey(), key.getValue());
-            nvps.add(e);
+        if (params != null) {
+            List<NameValuePair> nvps = new ArrayList<>();
+            for (Map.Entry<String, String> key : params.entrySet()) {
+                NameValuePair e = new NameValuePair(key.getKey(), key.getValue());
+                nvps.add(e);
+            }
+            NameValuePair[] nameValues = new NameValuePair[params.size()];
+            nameValues = nvps.toArray(nameValues);
+            post.setRequestBody(nameValues);
         }
-        NameValuePair[] nameValues = new NameValuePair[params.size()];
-        nameValues = nvps.toArray(nameValues);
-        post.setRequestBody(nameValues);
         if (StringUtils.isNotEmpty(charset)) {
             post.getParams().setParameter(HttpMethodParams.HTTP_CONTENT_CHARSET, charset);
         }
+        return getApiResult(url, httpClient, post);
+    }
 
+    //----POST JSON ----
+
+    public static ApiResult doPostJson(String url, String json) {
+        return doPostJson(url, json, null);
+    }
+
+    public static ApiResult doPostJson(String url, String json, Map<String, String> headers) {
+        HttpClient httpClient = new HttpClient();
+        PostMethod post = new PostMethod(url);
+        return getApiResult(url, httpClient, post);
+    }
+
+    //----PUT-----
+
+    public static ApiResult doPut(String url) {
+        return doPut(url, null);
+    }
+
+    public static ApiResult doPut(String url, Map<String, String> params) {
+        return doPut(url, params, null, 20000);
+    }
+
+    public static ApiResult doPut(String url, Map<String, String> params, String charset) {
+        return doPut(url, params, charset, 20000);
+    }
+
+    public static ApiResult doPut(String url, Map<String, String> params, String charset, int readTimeout) {
+        HttpClient httpClient = new HttpClient();
+        httpClient.getHttpConnectionManager().getParams().setConnectionTimeout(2000);
+        httpClient.getHttpConnectionManager().getParams().setSoTimeout(readTimeout);
+        PutMethod put = new PutMethod(url);
+        if (params != null) {
+            List<NameValuePair> nameValuePairList = new ArrayList<>();
+            for (Map.Entry<String, String> key : params.entrySet()) {
+                NameValuePair e = new NameValuePair(key.getKey(), key.getValue());
+                nameValuePairList.add(e);
+            }
+            NameValuePair[] nameValues = new NameValuePair[params.size()];
+            nameValues = nameValuePairList.toArray(nameValues);
+            put.setQueryString(nameValues);
+        }
+        if (StringUtils.isNotEmpty(charset)) {
+            put.getParams().setParameter(HttpMethodParams.HTTP_CONTENT_CHARSET, charset);
+        }
+        return getApiResult(url, httpClient, put);
+    }
+
+    //------公共----
+
+    private static ApiResult getApiResult(String url, HttpClient httpClient, HttpMethod method) {
         try {
-            httpClient.executeMethod(post);
-            // 获取二进制的byte流
-            byte[] b = post.getResponseBody();
-            String str = new String(b, "UTF-8");
-
-            return str;
+            int statusCode = httpClient.executeMethod(method);
+            if (statusCode == HttpStatus.SC_OK) {
+                // 获取二进制的byte流
+                byte[] b = method.getResponseBody();
+                String response = new String(b, DEFAULT_CHARSET);
+                return (ApiResult) JSONObject.toBean(JSONObject.fromObject(response), ApiResult.class);
+            } else {
+                logger.info("服务调用失败 Response Code: " + statusCode);
+            }
         } catch (Exception e) {
             logger.error("url=" + url + "\r\n", e);
-            return null;
         } finally {
-            post.releaseConnection();
+            method.releaseConnection();
         }
+        ApiResult apiResult = new ApiResult();
+        apiResult.setMessage("服务调用失败");
+        return apiResult;
     }
 
-    public static String doPost(String url, String jsonString, Map<String, String> headers) {
-        HttpClient httpClient = new HttpClient();
-        PostMethod post = new PostMethod(url);
-
-        try {
-            if (headers != null){
-                for (Map.Entry<String, String> entry : headers.entrySet()) {
-                    post.setRequestHeader(entry.getKey(), entry.getValue());
-                }
-            }
-            StringRequestEntity entity = new StringRequestEntity(jsonString, "application/json", "UTF-8");
-            post.setRequestEntity(entity);
-            httpClient.executeMethod(post);
-            // 获取二进制的byte流
-            byte[] b = post.getResponseBody();
-            String str = new String(b, "UTF-8");
-            return str;
-        } catch (Exception e) {
-            logger.error("", e);
-
-            return null;
-        } finally {
-            post.releaseConnection();
-        }
-    }
-
-    public static String doPost(String url, String string, String type) {
-        HttpClient httpClient = new HttpClient();
-        PostMethod post = new PostMethod(url);
-
-        try {
-
-            StringRequestEntity entity = new StringRequestEntity(string, "application/" + type, "UTF-8");
-
-            post.setRequestEntity(entity);
-
-            httpClient.executeMethod(post);
-            // 获取二进制的byte流
-            byte[] b = post.getResponseBody();
-            String str = new String(b, "UTF-8");
-
-            return str;
-        } catch (Exception e) {
-            logger.error("", e);
-
-            return null;
-        } finally {
-            post.releaseConnection();
-        }
-    }
-
-    public static String postRequest(String url, Map<String, String> params, HttpMethodParams attachParams) {
-        HttpClient client = new HttpClient();
-        client.setConnectionTimeout(5000);
-        PostMethod method = new PostMethod(url);
-        method.setParams(attachParams);
-//		Set<String> keys = params.keySet();
-        for (Map.Entry<String, String> key : params.entrySet()) {
-            method.setParameter(key.getKey(), key.getValue());
-        }
-        try {
-            client.executeMethod(method);
-            return new String(method.getResponseBody(), "UTF-8");
-        } catch (Exception e) {
-            return "";
-        }
-    }
 
 }
