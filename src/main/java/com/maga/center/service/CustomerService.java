@@ -27,11 +27,11 @@ public class CustomerService {
         if (!params.containsKey("token")) {
             return ApiResultBuilder.failure("请传入管理员令牌");
         }
-        String api = params.getString("api");
+        int api = Integer.parseInt(params.getString("api"));
         String token = params.getString("token");
         String permission = "OPT_CUSTOMER";
         //校验权限
-        if (Integer.parseInt(api) > 100104) {
+        if (api > 100104) {
             permission = "VIEW_CUSTOMER";
         }
         ApiResult apiResult = adminService.checkPermission(token, permission);
@@ -40,28 +40,28 @@ public class CustomerService {
         }
         //逻辑处理
         switch (api) {
-            case "100100":
+            case 100100:
                 apiResult = handle100100(params);
                 break;
-            case "100101":
+            case 100101:
                 apiResult = handle100101(params);
                 break;
-            case "100102":
+            case 100102:
                 apiResult = handle100102(params);
                 break;
-            case "100103":
+            case 100103:
                 apiResult = handle100103(params);
                 break;
-            case "100104":
+            case 100104:
                 apiResult = handle100104(params);
                 break;
-            case "100105":
+            case 100105:
                 apiResult = handle100105(params);
                 break;
-            case "100106":
+            case 100106:
                 apiResult = handle100106(params);
                 break;
-            case "100107":
+            case 100107:
                 apiResult = handle100107(params);
                 break;
             default:

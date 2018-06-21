@@ -13,6 +13,8 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/api")
 public class ApiController {
@@ -28,7 +30,7 @@ public class ApiController {
 
 
     @PostMapping
-    public ApiResult handleRequest(@RequestBody JSONObject params) {
+    public ApiResult handleRequest(HttpServletRequest resquest, @RequestBody JSONObject params) {
         //基本参数校验
         if (!params.containsKey("api") || !params.containsKey("accessKey") || !params.containsKey("sign")) {
             return ApiResultBuilder.failure("请传入基本参数！");
@@ -59,6 +61,9 @@ public class ApiController {
                 apiResult = customerService.handleRequest(params);
                 break;
             case "1002":
+                if (api.equals("100297")){
+                    params.put("ip", resquest.getRemoteHost());
+                }
                 apiResult = adminService.handleRequest(params);
                 break;
             case "1003":
