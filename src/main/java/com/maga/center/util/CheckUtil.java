@@ -22,4 +22,13 @@ public class CheckUtil {
     public static String hideMidMobileNo(String mobiles) {
         return mobiles.replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1****$2");
     }
+
+    /**
+     * 密码合法性校验
+     */
+    public static boolean isValidatePassword(String password){
+        Pattern p = Pattern.compile(" ^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{6,20}$");
+        Matcher m = p.matcher(password);
+        return m.matches();
+    }
 }

@@ -21,42 +21,29 @@ public class HttpUtil {
 
 
     public static ApiResult doGet(String url) {
-        return doGet(url, 20000);
-    }
-
-    public static ApiResult doGet(String url, String charset) {
-        return doGet(url, 3000, 20000, charset);
+        return doGet(url, null);
     }
 
     public static ApiResult doGet(String url, Map<String, String> header) {
-        return doGet(url, 3000, 20000, null, header);
+        return doGet(url, header, 20000, null);
     }
 
-    public static ApiResult doGet(String url, int readTimeout) {
-        return doGet(url, 3000, readTimeout);
-    }
 
-    public static ApiResult doGet(String url, int connTimeout, int readTimeout) {
-        return doGet(url, connTimeout, readTimeout, null);
-    }
-
-    public static ApiResult doGet(String url, int connTimeout, int readTimeout, String charset) {
-        return doGet(url, connTimeout, readTimeout, charset, null);
-    }
-
-    public static ApiResult doGet(String url, int connTimeout, int readTimeout, String charset, Map<String, String> headers) {
+    public static ApiResult doGet(String url, Map<String, String> headers, int readTimeout, String charset) {
         HttpClient client = new HttpClient();
-        client.getHttpConnectionManager().getParams().setConnectionTimeout(connTimeout);
         client.getHttpConnectionManager().getParams().setSoTimeout(readTimeout);
         // Create a method instance.
         GetMethod get = new GetMethod(url);
-        if (headers != null) {
+        if (headers != null && !headers.isEmpty()) {
             for (Map.Entry<String, String> entry : headers.entrySet()) {
                 get.setRequestHeader(entry.getKey(), entry.getValue());
             }
         }
-        get.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler(3, false));
-        get.getParams().setParameter(HttpMethodParams.HTTP_CONTENT_CHARSET, DEFAULT_CHARSET);
+        if (charset == null) {
+            get.getParams().setParameter(HttpMethodParams.HTTP_CONTENT_CHARSET, DEFAULT_CHARSET);
+        } else {
+            get.getParams().setParameter(HttpMethodParams.HTTP_CONTENT_CHARSET, charset);
+        }
         return getApiResult(url, client, get);
     }
 
@@ -95,7 +82,7 @@ public class HttpUtil {
         return getApiResult(url, httpClient, post);
     }
 
-    //----POST JSON ----
+    //----POST PUT JSON ----
 
     public static ApiResult doPostJson(String url, String json) {
         return doPostJson(url, json, null);
@@ -104,7 +91,16 @@ public class HttpUtil {
     public static ApiResult doPostJson(String url, String json, Map<String, String> headers) {
         HttpClient httpClient = new HttpClient();
         PostMethod post = new PostMethod(url);
+        if (headers != null && !headers.isEmpty()) {
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                post.setRequestHeader(entry.getKey(), entry.getValue());
+            }
+        }
         return getApiResult(url, httpClient, post);
+    }
+
+    public static ApiResult doPutJSON(String url, String string, Map<String, String> headers) {
+        return doPut(url, null);
     }
 
     //----PUT-----
@@ -114,19 +110,24 @@ public class HttpUtil {
     }
 
     public static ApiResult doPut(String url, Map<String, String> params) {
-        return doPut(url, params, null, 20000);
+        return doPut(url, params, null, null, 20000);
     }
 
     public static ApiResult doPut(String url, Map<String, String> params, String charset) {
-        return doPut(url, params, charset, 20000);
+        return doPut(url, params, null, charset, 20000);
     }
 
-    public static ApiResult doPut(String url, Map<String, String> params, String charset, int readTimeout) {
+    public static ApiResult doPut(String url, Map<String, String> params, Map<String, String> headers, String charset, int readTimeout) {
         HttpClient httpClient = new HttpClient();
         httpClient.getHttpConnectionManager().getParams().setConnectionTimeout(2000);
         httpClient.getHttpConnectionManager().getParams().setSoTimeout(readTimeout);
         PutMethod put = new PutMethod(url);
-        if (params != null) {
+        if (headers != null && !headers.isEmpty()) {
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                put.setRequestHeader(entry.getKey(), entry.getValue());
+            }
+        }
+        if (params != null && !params.isEmpty()) {
             List<NameValuePair> nameValuePairList = new ArrayList<>();
             for (Map.Entry<String, String> key : params.entrySet()) {
                 NameValuePair e = new NameValuePair(key.getKey(), key.getValue());
@@ -140,6 +141,36 @@ public class HttpUtil {
             put.getParams().setParameter(HttpMethodParams.HTTP_CONTENT_CHARSET, charset);
         }
         return getApiResult(url, httpClient, put);
+    }
+
+    //----DELETE----
+
+    public static ApiResult doDelete(String url) {
+        return doDelete(url, null);
+    }
+
+    public static ApiResult doDelete(String url, Map<String, String> headers) {
+        return doDelete(url, headers, null);
+    }
+
+    public static ApiResult doDelete(String url, Map<String, String> headers, String charset) {
+        return doDelete(url, headers, charset, 20000);
+    }
+
+    public static ApiResult doDelete(String url, Map<String, String> headers, String charset, int readTimeout) {
+        HttpClient httpClient = new HttpClient();
+        httpClient.getHttpConnectionManager().getParams().setConnectionTimeout(2000);
+        httpClient.getHttpConnectionManager().getParams().setSoTimeout(readTimeout);
+        DeleteMethod delete = new DeleteMethod(url);
+        if (headers != null && !headers.isEmpty()) {
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                delete.setRequestHeader(entry.getKey(), entry.getValue());
+            }
+        }
+        if (StringUtils.isNotEmpty(charset)) {
+            delete.getParams().setParameter(HttpMethodParams.HTTP_CONTENT_CHARSET, charset);
+        }
+        return getApiResult(url, httpClient, delete);
     }
 
     //------公共----

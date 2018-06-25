@@ -70,7 +70,7 @@ public class CustomerService {
         return apiResult;
     }
 
-    public ApiResult handle100100(JSONObject params) {
+    private ApiResult handle100100(JSONObject params) {
         // 参数是否完整（非空，格式）
         if (!params.containsKey("name") || StringUtils.isEmpty(params.getString("name"))) {
             return ApiResultBuilder.failure("名称不能为空");
@@ -86,7 +86,7 @@ public class CustomerService {
         return HttpUtil.doPost(url);
     }
 
-    public ApiResult handle100101(JSONObject params) {
+    private ApiResult handle100101(JSONObject params) {
         if (!params.containsKey("id") || StringUtils.isEmpty(params.getString("id"))) {
             return ApiResultBuilder.failure("ID不能为空");
         }
@@ -104,16 +104,15 @@ public class CustomerService {
         return HttpUtil.doPut(url);
     }
 
-    public ApiResult handle100102(JSONObject params) {
+    private ApiResult handle100102(JSONObject params) {
         if (!params.containsKey("id") || StringUtils.isEmpty(params.getString("id"))) {
             return ApiResultBuilder.failure("ID不能为空");
         }
         String url = SystemConstants.servers.get("100102") + "/" + params.getString("id");
-        ;
         return HttpUtil.doGet(url);
     }
 
-    public ApiResult handle100103(JSONObject params) {
+    private ApiResult handle100103(JSONObject params) {
         if (!params.containsKey("id") || StringUtils.isEmpty(params.getString("id"))) {
             return ApiResultBuilder.failure("ID不能为空");
         }
@@ -121,7 +120,7 @@ public class CustomerService {
         return HttpUtil.doGet(url);
     }
 
-    public ApiResult handle100104(JSONObject params) {
+    private ApiResult handle100104(JSONObject params) {
         if (!params.containsKey("id") || StringUtils.isEmpty(params.getString("id"))) {
             return ApiResultBuilder.failure("ID不能为空");
         }
@@ -129,7 +128,7 @@ public class CustomerService {
         return HttpUtil.doGet(url);
     }
 
-    public ApiResult handle100105(JSONObject params) {
+    private ApiResult handle100105(JSONObject params) {
         if (!params.containsKey("id") || StringUtils.isEmpty(params.getString("id"))) {
             return ApiResultBuilder.failure("ID不能为空");
         }
@@ -137,13 +136,13 @@ public class CustomerService {
         return HttpUtil.doGet(url);
     }
 
-    public ApiResult handle100106(JSONObject params) {
+    private ApiResult handle100106(JSONObject params) {
         String accessKey = params.getString("accessKey");
         String url = SystemConstants.servers.get("100106") + "?accessKey=" + accessKey;
         return HttpUtil.doGet(url);
     }
 
-    public ApiResult handle100107(JSONObject params) {
+    private ApiResult handle100107(JSONObject params) {
         String page = SystemConstants.DEFAULT_PAGE;
         String size = SystemConstants.DEFAULT_PAGE_SIZE;
         String name = "";
@@ -158,14 +157,6 @@ public class CustomerService {
         }
         String url = SystemConstants.servers.get("100107") + "?name=" + name + "&page=" + page + "&size=" + size;
         return HttpUtil.doGet(url);
-    }
-
-    public boolean checkSign(JSONObject params) {
-        ApiResult result = handle100106(params);
-        if (!result.isSuccess()) {
-            return false;
-        }
-        return SignUtil.checkSign(params, result.getData().getString("accessSecret"));
     }
 
 }
